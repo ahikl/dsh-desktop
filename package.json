@@ -1,0 +1,74 @@
+{
+  "name": "dsh-desktop",
+  "version": "0.1.0",
+  "description": "A dsh desktop bundle: an Electron shell over the dsh Web UI with a system tray and a dsh-styled custom title bar.",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "electron",
+    "desktop",
+    "deepseek-harness"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./startup": {
+      "types": "./lib/types/startup.d.ts",
+      "default": "./lib/startup.js"
+    },
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/startup.js",
+    "cordis.patch.yml",
+    "electron-main.cjs",
+    "preload.cjs",
+    "icon.png",
+    "dashboard.html",
+    "lib/types/**/*.d.ts"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && tsdown",
+    "prepare": "tsdown --config tsdown.prepare.config.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "lint": "oxlint .",
+    "prepack": "pnpm run build"
+  },
+  "dependencies": {
+    "commander": "^15.0.0"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": ">=0.1.0-rc.5",
+    "@deepseek-ai/cordis-plugin-loader": ">=0.1.0-rc.5",
+    "@deepseek-ai/dsh-cmdline": ">=0.1.0-rc.5",
+    "@deepseek-ai/schemastery": ">=0.1.0-rc.5",
+    "electron": ">=28.0.0"
+  },
+  "peerDependenciesMeta": {
+    "electron": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.0",
+    "commander": "^15.0.0",
+    "oxlint": "^1.76.0",
+    "tsdown": "^0.22.2",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.8"
+  }
+}

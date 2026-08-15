@@ -1,0 +1,31 @@
+{
+  "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
+  "plugins": ["typescript"],
+  "env": {
+    "builtin": true
+  },
+  "ignorePatterns": [
+    "**/lib/**",
+    "**/node_modules/**"
+  ],
+  "rules": {
+    "no-var": "error",
+    "prefer-spread": "error",
+    "no-array-constructor": "error",
+    "no-unused-vars": [
+      "error",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_"
+      }
+    ],
+    "typescript/no-explicit-any": "error",
+    "typescript/no-non-null-assertion": "error",
+    "typescript/no-wrapper-object-types": "error",
+    "typescript/only-throw-error": "error",
+    "typescript/use-unknown-in-catch-callback-variable": "error",
+    "typescript/prefer-as-const": "error",
+    "typescript/prefer-literal-enum-member": "error"
+  }
+}

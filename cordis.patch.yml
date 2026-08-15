@@ -1,0 +1,35 @@
+# The dsh-desktop bundle patch: the desktop surface over dsh-web-app.
+# Applied after dsh-base and dsh-web-app; rows here override web-app rows by id,
+# with the profile's own cordis.patch.yml and any --patch overlays still to come.
+#
+# The desktop surface reuses dsh-web-app's whole host/browser roster (Web
+# server, frontend dist, API gateway, browser plugins) and only changes how the
+# surface is launched: the desktop provider replaces web-app's flag provider so
+# one command-line parser owns the inner arguments, and the desktop runner
+# spawns an Electron window over the bound Web server.
+#
+# Stacked over dsh-base alone (without dsh-web-app), the `web-startup` override
+# matches no row (a Loader warning, not a failure) and the runner falls back to
+# the bundled dashboard, so the bundle also works as a bare dashboard shell.
+
+# The desktop provider supplies the same `webStartup` values the web rows inject
+# (host/port/trustedHosts) and additionally parses the `desktop` subcommand and
+# `--url`. Two providers of one service would conflict, so web-app's own flag
+# provider is disabled here rather than left to compete for the inner arguments.
+- id: web-startup
+  disabled: true
+
+- insert:
+    # Ordinary provider for the parsed desktop invocation. Its plugin-level
+    # injection waits for cmdlineArgs; no launcher metadata or special row kind.
+    - id: desktop-startup
+      name: 'dsh-desktop/startup'
+
+    # Spawns the Electron window once the tree settles. `url` resolves lazily
+    # from the desktopStartup provider; everything else is composition config
+    # (electronPath, width, height) or platform auto-detection.
+    - id: desktop-runner
+      name: 'dsh-desktop'
+      inject: [desktopStartup]
+      config:
+        url: !!js ctx.desktopStartup.url

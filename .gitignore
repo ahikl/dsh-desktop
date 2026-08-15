@@ -1,0 +1,40 @@
+#dependencies
+node_modules/
+
+#build output
+lib/
+dist/
+out/
+release/
+*.tsbuildinfo
+
+#tests
+coverage/
+
+#editor and OS cruft
+.DS_Store
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.idea/
+.vscode/
+.history/
+*.swp
+*~
+
+#secrets and local environment files
+.env
+.env.*
+!.env.example
+
+# logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# temp files
+tmp/
+temp/
+*.tmp
