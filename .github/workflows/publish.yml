@@ -1,0 +1,63 @@
+name: Release Please
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run Release Please
+        id: release
+        uses: googleapis/release-please-action@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          release-type: node
+          package-name: '@ahikl/dsh-desktop'
+          target-branch: main
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        if: ${{ steps.release.outputs.release_created }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        if: ${{ steps.release.outputs.release_created }}
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        if: ${{ steps.release.outputs.release_created }}
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        if: ${{ steps.release.outputs.release_created }}
+
+      - name: Type check
+        run: pnpm run typecheck
+        if: ${{ steps.release.outputs.release_created }}
+
+      - name: Test
+        run: pnpm run test
+        if: ${{ steps.release.outputs.release_created }}
+
+      - name: Build
+        run: pnpm run build
+        if: ${{ steps.release.outputs.release_created }}
+
+      - name: Publish to npm
+        run: pnpm publish --access public --provenance
+        if: ${{ steps.release.outputs.release_created }}

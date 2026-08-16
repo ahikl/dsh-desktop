@@ -1,7 +1,19 @@
 {
-  "name": "dsh-desktop",
+  "name": "@ahikl/dsh-desktop",
   "version": "0.1.0",
   "description": "A dsh desktop bundle: an Electron shell over the dsh Web UI with a system tray and a dsh-styled custom title bar.",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ahikl/dsh-desktop.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ahikl/dsh-desktop/issues"
+  },
+  "homepage": "https://github.com/ahikl/dsh-desktop#readme",
+  "author": "ahikl",
   "keywords": [
     "dsh",
     "dsh-plugin",
@@ -42,7 +54,6 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json && tsdown",
-    "prepare": "tsdown --config tsdown.prepare.config.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "lint": "oxlint .",
@@ -65,7 +76,6 @@
   },
   "devDependencies": {
     "@types/node": "^22.20.0",
-    "commander": "^15.0.0",
     "oxlint": "^1.76.0",
     "tsdown": "^0.22.2",
     "typescript": "^6.0.3",
