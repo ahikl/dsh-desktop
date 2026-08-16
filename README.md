@@ -1,71 +1,75 @@
 # dsh-desktop
 
-A dsh desktop bundle: an Electron shell over the dsh Web UI, with a system tray and a dsh-styled custom title bar. Installed as an out-of-tree plugin — it changes no dsh source and keeps Electron out of the dsh dependency tree.
+[English](README.en.md) | 简体中文
 
-## What it is
+> DeepSeek Harness 桌面端插件：使用 Electron 包装 dsh Web UI，提供系统托盘与自定义标题栏。
 
-A **bundle** (it declares `dsh.bundle.patch`): when added to a profile, it lays the desktop surface over `dsh-web-app`. It mounts two rows — `desktop-startup` (parses the `desktop` command) and `desktop-runner` (spawns Electron once the tree settles).
+## 简介
 
-The Electron window is frameless with a custom title bar that reads the dsh design tokens (`--dsw-alias-*`), so it follows the current light/dark theme and re-paints on theme switches. Closing the window hides it to the system tray; the tray menu shows the window, opens the Web UI in a browser, or quits.
+`dsh-desktop` 是一个 out-of-tree 桌面端插件，不修改 dsh 源码，也不把 Electron 引入 dsh 依赖树。
 
-## Compatibility
+## 功能
 
-Built against dsh `0.1.0-rc.5`. The dsh framework packages are `peerDependencies`: they resolve from the receiver's dsh installation at runtime, never from this package's own install.
+- 使用 Electron 加载 dsh Web UI
+- 无边框窗口 + dsh 风格标题栏，自动跟随主题
+- 系统托盘：显示主窗口、打开浏览器、退出
+- 关闭窗口时最小化到托盘
+- URL 解析优先级：`--url` > Web Server 端口 > `dashboard.html`
 
-## Install (receiver side)
+## 工作原理
 
-A desktop profile stacks `dsh-base` + `dsh-web-app` + this bundle:
+通过 `cordis.patch.yml` 挂载两个插件：
+
+- **desktop-startup**：解析 `dsh desktop` 参数，提供 `webStartup` / `desktopStartup` 服务
+- **desktop-runner**：等待树稳定后，解析 URL 和 Electron 路径，并以子进程方式启动 Electron
+
+## 使用
 
 ```sh
-# from npm (once published)
-dsh plugin --profile desktop add @yourscope/dsh-desktop @deepseek-ai/dsh-web-app
-# or straight from git
-dsh plugin --profile desktop add github:you/dsh-desktop @deepseek-ai/dsh-web-app
-
-# Electron is a per-profile runtime requirement (platform binary, not bundled)
+dsh plugin --profile desktop add @ahikl/dsh-desktop @deepseek-ai/dsh-web-app
 dsh plugin --profile desktop add electron
-
 dsh --profile desktop desktop
+
+dsh --profile desktop --url https://example.com
 ```
 
-## Develop and build
-
-Inside the dsh monorepo checkout, the `tsconfig.json` `paths` map the framework packages to source, so the following run without published copies:
-
-```sh
-pnpm install
-pnpm run typecheck   # tsc -p tsconfig.json --noEmit
-pnpm run test        # vitest run (pure unit tests in tests/)
-pnpm run build       # tsc emits lib/types, tsdown bundles lib/{index,startup}.js
-```
-
-`lib/` is gitignored; publish runs `build` via `prepack`.
-
-## Publish
-
-```sh
-# npm
-pnpm publish         # runs prepack -> build first
-
-# or GitHub only: push, then receivers install github:you/dsh-desktop#tag
-```
-
-Before publishing, drop the `paths` block in `tsconfig.json` and add the framework packages as `devDependencies` with their real published versions (they are currently `@deepseek-ai/*` pre-release packages).
-
-## Configuration
-
-The `desktop-runner` row (the bundle's `plugins.electron`-equivalent namespace) accepts:
+## 配置
 
 ```yaml
 - id: desktop-runner
   config:
-    url: https://example.com   # optional; override Web-UI auto-detection
-    electronPath: /opt/electron/electron   # optional; override resolution
-    width: 1280                # optional; omit for a display-relative default
+    url: https://example.com
+    electronPath: /opt/electron/electron
+    width: 1280
     height: 800
-    electronArgs: ["--no-sandbox", "--disable-gpu"]   # optional Electron switches
+    electronArgs: ["--no-sandbox", "--disable-gpu"]
 ```
 
-## License
+## 开发
 
-MIT
+```sh
+pnpm install
+pnpm run typecheck
+pnpm run test        # 单元测试
+pnpm run build       # 构建到 lib/
+```
+
+## 目录结构
+
+```text
+dsh-desktop/
+├── cordis.patch.yml        # bundle patch
+├── src/
+│   ├── index.ts            # desktop-runner 插件
+│   ├── launcher.ts         # Electron 解析与启动逻辑
+│   └── startup.ts          # desktop-startup 插件
+├── electron-main.cjs       # Electron 主进程
+├── preload.cjs             # 自定义标题栏预加载脚本
+├── dashboard.html          # 兜底页面
+├── tests/                  # 单元测试
+└── package.json
+```
+
+## 许可证
+
+[MIT](./LICENSE)
