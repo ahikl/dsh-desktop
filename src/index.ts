@@ -92,12 +92,12 @@ export interface ElectronChild {
 export const internals: {
   stderr: { write(chunk: string): unknown }
   spawn: (binary: string, args: readonly string[], env: NodeJS.ProcessEnv) => ElectronChild
-  spawnWebUi: (command: string, args: readonly string[]) => ChildProcess
+  spawnWebUi: (commandLine: string) => ChildProcess
   resolveElectronBinary: typeof resolveElectronBinary
 } = {
   stderr: process.stderr,
   spawn: spawnElectron,
-  spawnWebUi: (command, args) => spawn(command, [...args], { stdio: ['ignore', 'pipe', 'pipe'], shell: process.platform === 'win32' }),
+  spawnWebUi: (commandLine) => spawn(commandLine, { stdio: ['ignore', 'pipe', 'pipe'], shell: true }),
   resolveElectronBinary,
 }
 
@@ -131,24 +131,26 @@ async function launch(ctx: Context, config: Config): Promise<void> {
   // spawn `dsh web` ourselves, parse the printed loopback URL, and keep the
   // child alive for the lifetime of the desktop session.
   const startWebUiAndResolveUrl = async (): Promise<string> => {
-    const candidates: ReadonlyArray<readonly [string, readonly string[]]> = [
-      [process.platform === 'win32' ? 'dsh.cmd' : 'dsh', ['web', '--port', '0']],
-      [process.platform === 'win32' ? 'npx.cmd' : 'npx', ['--yes', '@deepseek-ai/dsh', 'web', '--port', '0']],
+    const candidates = [
+      process.platform === 'win32' ? 'dsh.cmd web --port 0' : 'dsh web --port 0',
+        process.platform === 'win32' ? 'pnpm.cmd dsh web --port 0' : 'pnpm dsh web --port 0',
+      process.platform === 'win32' ? 'npx.cmd --yes @deepseek-ai/dsh web --port 0' : 'npx --yes @deepseek-ai/dsh web --port 0',
     ]
     let lastError: unknown
-    for (const [command, args] of candidates) {
+    for (const commandLine of candidates) {
       try {
         return await new Promise<string>((resolve, reject) => {
-          const proc = internals.spawnWebUi(command, args)
+          const proc = internals.spawnWebUi(commandLine)
           webUiChild = proc
           let settled = false
+                        let output = ''
           let cleanup: () => void = () => {}
           const timeout = setTimeout(() => {
             if (settled) return
             settled = true
             cleanup()
             killChild(proc)
-            reject(new Error(`Timed out waiting for ${command} to print a Web UI URL`))
+            reject(new Error(`Timed out waiting for ${commandLine} to print a Web UI URL${output ? `\n${output}` : ''}`))
           }, 30_000)
           cleanup = (): void => {
             clearTimeout(timeout)
@@ -158,7 +160,9 @@ async function launch(ctx: Context, config: Config): Promise<void> {
             proc.off('exit', onExit)
           }
           const onData = (chunk: Buffer | string): void => {
-            const match = /https?:\/\/[^\s]+/.exec(chunk.toString())
+            const text = chunk.toString()
+              output += text
+              const match = /https?:\/\/[^\s]+/.exec(text)
             if (match !== null && !settled) {
               settled = true
               cleanup()
@@ -175,7 +179,7 @@ async function launch(ctx: Context, config: Config): Promise<void> {
             if (settled) return
             settled = true
             cleanup()
-            reject(new Error(`dsh web exited with code ${String(code)}`))
+            reject(new Error(`dsh web exited with code ${String(code)}${output ? `\n${output}` : ''}`))
           }
           proc.stdout?.on('data', onData)
           proc.stderr?.on('data', onData)
