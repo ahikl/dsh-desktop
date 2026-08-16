@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/ahikl/dsh-desktop/compare/v0.3.0...v0.3.1) (2026-08-16)
+
+
+### Bug Fixes
+
+* use scoped plugin names and harden dsh web auto-start ([32c071c](https://github.com/ahikl/dsh-desktop/commit/32c071c7de5ac74ce9c9623a7f5644e4345667ef))
+
 ## [0.3.0](https://github.com/ahikl/dsh-desktop/compare/v0.2.0...v0.3.0) (2026-08-16)
 
 
