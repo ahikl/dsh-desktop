@@ -3,7 +3,7 @@
  * glue plugin plus the bundle patch (`cordis.patch.yml`, declared by the
  * `dsh.bundle.patch` manifest field). The plugin owns the Electron launch: it
  * waits for the composed tree to settle, resolves the window URL (explicit
- * `--url`, the bound Web server, then the bundled dashboard), resolves the
+ * `--url`, the bound Web server, or an auto-started `dsh web`), resolves the
  * Electron binary, and spawns it as an isolated child process. A missing
  * Electron installation is a clear stderr diagnostic, never a tree failure.
  * @module dsh-desktop
@@ -142,7 +142,16 @@ async function launch(ctx: Context, config: Config): Promise<void> {
           const proc = internals.spawnWebUi(command, args)
           webUiChild = proc
           let settled = false
-          const cleanup = (): void => {
+          let cleanup: () => void = () => {}
+          const timeout = setTimeout(() => {
+            if (settled) return
+            settled = true
+            cleanup()
+            killChild(proc)
+            reject(new Error(`Timed out waiting for ${command} to print a Web UI URL`))
+          }, 30_000)
+          cleanup = (): void => {
+            clearTimeout(timeout)
             proc.stdout?.off('data', onData)
             proc.stderr?.off('data', onData)
             proc.off('error', onError)

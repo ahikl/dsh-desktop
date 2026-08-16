@@ -9,8 +9,8 @@
 # spawns an Electron window over the bound Web server.
 #
 # Stacked over dsh-base alone (without dsh-web-app), the `web-startup` override
-# matches no row (a Loader warning, not a failure) and the runner falls back to
-# the bundled dashboard, so the bundle also works as a bare dashboard shell.
+# matches no row (a Loader warning, not a failure) and the runner auto-starts
+# `dsh web`; the bundled dashboard remains only as Electron's last-resort fallback.
 
 # The desktop provider supplies the same `webStartup` values the web rows inject
 # (host/port/trustedHosts) and additionally parses the `desktop` subcommand and
@@ -23,13 +23,13 @@
     # Ordinary provider for the parsed desktop invocation. Its plugin-level
     # injection waits for cmdlineArgs; no launcher metadata or special row kind.
     - id: desktop-startup
-      name: 'dsh-desktop/startup'
+      name: '@ahikl/dsh-desktop/startup'
 
     # Spawns the Electron window once the tree settles. `url` resolves lazily
     # from the desktopStartup provider; everything else is composition config
     # (electronPath, width, height) or platform auto-detection.
     - id: desktop-runner
-      name: 'dsh-desktop'
+      name: '@ahikl/dsh-desktop'
       inject: [desktopStartup]
       config:
         url: !!js ctx.desktopStartup.url
