@@ -24,10 +24,11 @@
 - **desktop-runner**：等待树稳定后，解析 URL 和 Electron 路径；没有现成 Web UI 时自动启动 `dsh web`，再以子进程方式启动 Electron
 
 ## 使用
+> `0.3.1` 及以下版本已废弃，请使用最新版。
+
 
 ```sh
 dsh plugin --profile desktop add @ahikl/dsh-desktop electron
-dsh --profile desktop desktop
 dsh --profile desktop desktop
 
 dsh --profile desktop desktop --url http://127.0.0.1:3080

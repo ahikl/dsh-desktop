@@ -15,6 +15,8 @@ The Electron window is frameless with a custom title bar that reads the dsh desi
 Built against dsh `0.1.0-rc.5`. The dsh framework packages are `peerDependencies`: they resolve from the receiver's dsh installation at runtime, never from this package's own install.
 
 ## Install (receiver side)
+> Versions `0.3.1` and below are deprecated; please use the latest version.
+
 
 A desktop profile stacks `dsh-base` + `dsh-web-app` + this bundle:
 
