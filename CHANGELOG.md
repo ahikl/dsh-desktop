@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/ahikl/dsh-desktop/compare/v0.3.1...v0.3.2) (2026-08-16)
+
+
+### Bug Fixes
+
+* support pnpm dsh in web UI auto-start ([3cad9f9](https://github.com/ahikl/dsh-desktop/commit/3cad9f9cd9fc11fac8931a0d7ec9f1c668982e5e))
+
 ## [0.3.1](https://github.com/ahikl/dsh-desktop/compare/v0.3.0...v0.3.1) (2026-08-16)
 
 
