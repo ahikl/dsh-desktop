@@ -14,23 +14,37 @@
 - 无边框窗口 + dsh 风格标题栏，自动跟随主题
 - 系统托盘：显示主窗口、打开浏览器、退出
 - 关闭窗口时最小化到托盘
-- URL 解析优先级：`--url` > Web Server 端口 > `dashboard.html`
+- URL 解析优先级：`--url` > Web Server 端口 > 自动启动 `dsh web`
 
 ## 工作原理
 
 通过 `cordis.patch.yml` 挂载两个插件：
 
 - **desktop-startup**：解析 `dsh desktop` 参数，提供 `webStartup` / `desktopStartup` 服务
-- **desktop-runner**：等待树稳定后，解析 URL 和 Electron 路径，并以子进程方式启动 Electron
+- **desktop-runner**：等待树稳定后，解析 URL 和 Electron 路径；没有现成 Web UI 时自动启动 `dsh web`，再以子进程方式启动 Electron
 
 ## 使用
 
 ```sh
-dsh plugin --profile desktop add @ahikl/dsh-desktop @deepseek-ai/dsh-web-app
-dsh plugin --profile desktop add electron
+dsh plugin --profile desktop add @ahikl/dsh-desktop electron
+dsh --profile desktop desktop
 dsh --profile desktop desktop
 
-dsh --profile desktop --url https://example.com
+dsh --profile desktop desktop --url http://127.0.0.1:3080
+```
+
+最简单的启动方式（没有安装 `dsh-web-app` 时，桌面插件会自动启动官方 Web UI）：
+
+```sh
+dsh plugin --profile desktop add @ahikl/dsh-desktop electron
+dsh --profile desktop desktop
+```
+
+如果已经安装了 `dsh-web-app`，桌面插件会自动复用其 Web Server：
+
+```sh
+dsh plugin --profile desktop add @ahikl/dsh-desktop @deepseek-ai/dsh-web-app electron
+dsh --profile desktop desktop
 ```
 
 ## 配置

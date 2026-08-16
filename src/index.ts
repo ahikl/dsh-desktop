@@ -10,6 +10,7 @@
  */
 
 import { createRequire } from 'node:module'
+import { spawn, type ChildProcess } from 'node:child_process'
 import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import type {} from '@deepseek-ai/dsh-cmdline'
@@ -91,10 +92,12 @@ export interface ElectronChild {
 export const internals: {
   stderr: { write(chunk: string): unknown }
   spawn: (binary: string, args: readonly string[], env: NodeJS.ProcessEnv) => ElectronChild
+  spawnWebUi: (command: string, args: readonly string[]) => ChildProcess
   resolveElectronBinary: typeof resolveElectronBinary
 } = {
   stderr: process.stderr,
   spawn: spawnElectron,
+  spawnWebUi: (command, args) => spawn(command, [...args], { stdio: ['ignore', 'pipe', 'pipe'], shell: process.platform === 'win32' }),
   resolveElectronBinary,
 }
 
@@ -115,9 +118,72 @@ function missingElectronMessage(): string {
  */
 async function launch(ctx: Context, config: Config): Promise<void> {
   // Register the teardown disposer while the fiber is active; it closes over
-  // the mutable child handle, so the spawn below is covered by teardown too.
+  // the mutable child handles, so any spawned Electron/Web UI process is
+  // covered by teardown too.
   let child: ElectronChild | undefined
-  ctx.effect(() => () => { if (child !== undefined) killChild(child) }, 'desktop-runner.kill-child')
+  let webUiChild: ChildProcess | undefined
+  ctx.effect(() => () => {
+    if (child !== undefined) killChild(child)
+    if (webUiChild !== undefined) killChild(webUiChild)
+  }, 'desktop-runner.kill-child')
+
+  // When no Web server is already bound and no explicit URL was supplied,
+  // spawn `dsh web` ourselves, parse the printed loopback URL, and keep the
+  // child alive for the lifetime of the desktop session.
+  const startWebUiAndResolveUrl = async (): Promise<string> => {
+    const candidates: ReadonlyArray<readonly [string, readonly string[]]> = [
+      [process.platform === 'win32' ? 'dsh.cmd' : 'dsh', ['web', '--port', '0']],
+      [process.platform === 'win32' ? 'npx.cmd' : 'npx', ['--yes', '@deepseek-ai/dsh', 'web', '--port', '0']],
+    ]
+    let lastError: unknown
+    for (const [command, args] of candidates) {
+      try {
+        return await new Promise<string>((resolve, reject) => {
+          const proc = internals.spawnWebUi(command, args)
+          webUiChild = proc
+          let settled = false
+          const cleanup = (): void => {
+            proc.stdout?.off('data', onData)
+            proc.stderr?.off('data', onData)
+            proc.off('error', onError)
+            proc.off('exit', onExit)
+          }
+          const onData = (chunk: Buffer | string): void => {
+            const match = /https?:\/\/[^\s]+/.exec(chunk.toString())
+            if (match !== null && !settled) {
+              settled = true
+              cleanup()
+              resolve(match[0])
+            }
+          }
+          const onError = (error: Error): void => {
+            if (settled) return
+            settled = true
+            cleanup()
+            reject(error)
+          }
+          const onExit = (code: number | null): void => {
+            if (settled) return
+            settled = true
+            cleanup()
+            reject(new Error(`dsh web exited with code ${String(code)}`))
+          }
+          proc.stdout?.on('data', onData)
+          proc.stderr?.on('data', onData)
+          proc.on('error', onError)
+          proc.on('exit', onExit)
+        })
+      } catch (error) {
+        lastError = error
+        if (webUiChild !== undefined) {
+          killChild(webUiChild)
+          webUiChild = undefined
+        }
+      }
+    }
+    throw lastError instanceof Error ? lastError : new Error(String(lastError))
+  }
+
   // The Web server binds in its own fiber init; await full settlement so the
   // port read below is the bound one. A bare (test) context has no Loader and
   // proceeds at once. A sibling failure (e.g. the port is already in use)
@@ -130,10 +196,12 @@ async function launch(ctx: Context, config: Config): Promise<void> {
   }
   if (ctx.fiber.state !== FIBER_ACTIVE) return
   const webServer = ctx.get('webServer') as BoundWebServer | undefined
-  const targetUrl = resolveTargetUrl({
-    url: config.url,
-    webServerPort: typeof webServer?.port === 'number' ? webServer.port : undefined,
-  })
+  const targetUrl = config.url !== undefined || typeof webServer?.port === 'number'
+    ? resolveTargetUrl({
+        url: config.url,
+        webServerPort: typeof webServer?.port === 'number' ? webServer.port : undefined,
+      })
+    : await startWebUiAndResolveUrl()
   const binary = internals.resolveElectronBinary(
     config.electronPath,
     specifier => createRequire(ctx.baseUrl ?? import.meta.url)(specifier),

@@ -30,6 +30,20 @@ dsh plugin --profile desktop add electron
 dsh --profile desktop desktop
 ```
 
+Simplest startup (when `dsh-web-app` is not installed, the desktop plugin auto-starts the official Web UI):
+
+```sh
+dsh plugin --profile desktop add @ahikl/dsh-desktop electron
+dsh --profile desktop desktop
+```
+
+If `dsh-web-app` is installed, the desktop plugin automatically reuses its Web Server:
+
+```sh
+dsh plugin --profile desktop add @ahikl/dsh-desktop @deepseek-ai/dsh-web-app electron
+dsh --profile desktop desktop
+```
+
 ## Develop and build
 
 Inside the dsh monorepo checkout, the `tsconfig.json` `paths` map the framework packages to source, so the following run without published copies:

@@ -2,7 +2,7 @@
 node_modules/
 
 #build output
-# lib/ is committed so git-hosted installs can work without running prepare
+lib/
 dist/
 out/
 release/
