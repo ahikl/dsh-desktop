@@ -1,6 +1,6 @@
 {
   "name": "@ahikl/dsh-desktop",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "A dsh desktop bundle: an Electron shell over the dsh Web UI with a system tray and a dsh-styled custom title bar.",
   "publishConfig": {
     "access": "public"
